@@ -71,6 +71,7 @@ const AdminLayout = ({ children }) => {
         { icon: CreditCard, label: 'Deposits', path: '/deposits' },
         { icon: ShieldCheck, label: 'Security', path: '/security' },
         { icon: MessageSquare, label: 'Communications', path: '/communications' },
+        { icon: Bell, label: 'Notifications', path: '/notifications' },
         { icon: Activity, label: 'Logs', path: '/logs' },
     ];
 
@@ -158,6 +159,13 @@ const AdminLayout = ({ children }) => {
                     </div>
 
                     <div className="flex items-center gap-4">
+                        <Link
+                            to="/notifications"
+                            className="p-2.5 text-gray-400 hover:text-blue-500 hover:bg-gray-100 rounded-xl transition-all relative group"
+                        >
+                            <Bell size={20} className="group-hover:scale-110 transition-transform" />
+                            <div className="absolute top-2 right-2 w-2 h-2 bg-blue-500 rounded-full border-2 border-white ring-2 ring-blue-500/10"></div>
+                        </Link>
                         <div className="flex items-center gap-3 py-1 px-3 border border-gray-100 rounded-full bg-gray-50">
                             <div className="w-8 h-8 rounded-full bg-gray-200 border border-white overflow-hidden">
                                 <img src="https://ui-avatars.com/api/?name=Admin&background=random" alt="Admin" />

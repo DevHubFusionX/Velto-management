@@ -11,6 +11,7 @@ import SecuritySettings from './pages/SecuritySettings';
 import CommunicationsCenter from './pages/CommunicationsCenter';
 import PlatformSettings from './pages/PlatformSettings';
 import Login from './pages/Login';
+import AdminNotifications from './pages/AdminNotifications';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 import { History } from 'lucide-react';
 
@@ -100,6 +101,12 @@ function App() {
           <Route path="/logs" element={
             <ProtectedLayout>
               <ActionLogs />
+            </ProtectedLayout>
+          } />
+
+          <Route path="/notifications" element={
+            <ProtectedLayout>
+              <AdminNotifications />
             </ProtectedLayout>
           } />
 

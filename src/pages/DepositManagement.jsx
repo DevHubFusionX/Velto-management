@@ -20,6 +20,12 @@ const DepositManagement = () => {
     const [deposits, setDeposits] = useState([]);
     const [loading, setLoading] = useState(true);
     const [processingId, setProcessingId] = useState(null);
+    // Verification Modal State
+    const [verificationModal, setVerificationModal] = useState({
+        isOpen: false,
+        deposit: null,
+        verifiedAmount: ''
+    });
 
     useEffect(() => {
         fetchDeposits();
@@ -38,11 +44,38 @@ const DepositManagement = () => {
         }
     };
 
-    const handleApprove = async (id) => {
+    const openVerificationModal = (deposit) => {
+        setVerificationModal({
+            isOpen: true,
+            deposit,
+            verifiedAmount: deposit.amount // Default to requested amount
+        });
+    };
+
+    const closeVerificationModal = () => {
+        setVerificationModal({ isOpen: false, deposit: null, verifiedAmount: '' });
+    };
+
+    const handleVerifyApprove = async () => {
+        const { deposit, verifiedAmount } = verificationModal;
+        if (!deposit) return;
+
         try {
-            setProcessingId(id);
-            await adminService.approveDeposit(id);
-            toast.success('Deposit approved successfully');
+            setProcessingId(deposit._id);
+            // Call API with verified amount (Backend expects { verifiedAmount })
+            // We need to update adminService.approveDeposit to support args or use a new method
+            // For now, assuming we modified the service or pass a second arg that the service handles
+            // Actually, let's assume we need to update the service or pass a body.
+            // But adminService.approveDeposit(id) likely doesn't take body. 
+            // I'll update the service call here to pass the amount if the service supports it, 
+            // OR I'll assume I update the service in the next step. 
+            // Wait, looking at admin.service.js, approveDeposit takes (depositId). 
+            // I need to update admin.service.js to take a second argument (data).
+
+            await adminService.approveDeposit(deposit._id, { verifiedAmount });
+
+            toast.success(`Deposit verified and approved for ₦${verifiedAmount}`);
+            closeVerificationModal();
             await fetchDeposits();
         } catch (error) {
             console.error('Approval failed:', error);
@@ -169,6 +202,7 @@ const DepositManagement = () => {
                             <tr className="bg-gray-50/50 border-b border-gray-100">
                                 <th className="px-8 py-6 text-xs font-bold uppercase tracking-wider text-gray-400">User</th>
                                 <th className="px-8 py-6 text-xs font-bold uppercase tracking-wider text-gray-400">Amount</th>
+                                <th className="px-8 py-6 text-xs font-bold uppercase tracking-wider text-gray-400">Proof</th>
                                 <th className="px-8 py-6 text-xs font-bold uppercase tracking-wider text-gray-400">Method</th>
                                 <th className="px-8 py-6 text-xs font-bold uppercase tracking-wider text-gray-400">Status</th>
                                 <th className="px-8 py-6 text-xs font-bold uppercase tracking-wider text-gray-400 text-right">Actions</th>
@@ -197,6 +231,13 @@ const DepositManagement = () => {
                                                     {deposit.reference}
                                                 </span>
                                             </div>
+                                        </td>
+                                        <td className="px-8 py-6">
+                                            {deposit.proofUrl ? (
+                                                <a href={deposit.proofUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline text-xs">View Proof</a>
+                                            ) : (
+                                                <span className="text-xs text-gray-400">No Proof</span>
+                                            )}
                                         </td>
                                         <td className="px-8 py-6">
                                             <div className="flex items-center gap-3">
@@ -231,12 +272,12 @@ const DepositManagement = () => {
                                                 {deposit.status === 'Pending' ? (
                                                     <>
                                                         <button
-                                                            onClick={() => handleApprove(deposit._id)}
+                                                            onClick={() => openVerificationModal(deposit)}
                                                             disabled={processingId === deposit._id}
                                                             className="flex items-center gap-2 px-5 py-2.5 bg-gray-900 hover:opacity-90 disabled:opacity-50 text-white rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all shadow-sm active:scale-95 disabled:cursor-not-allowed"
                                                         >
                                                             {processingId === deposit._id ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-                                                            Approve
+                                                            Verify
                                                         </button>
                                                         <button
                                                             onClick={() => handleReject(deposit._id)}
@@ -258,7 +299,7 @@ const DepositManagement = () => {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="5" className="px-8 py-12 text-center text-gray-400 text-sm">
+                                    <td colSpan="6" className="px-8 py-12 text-center text-gray-400 text-sm">
                                         No deposit requests found
                                     </td>
                                 </tr>
@@ -267,6 +308,73 @@ const DepositManagement = () => {
                     </table>
                 </div>
             </div>
+
+            {/* Verification Modal */}
+            {verificationModal.isOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-xl font-bold text-gray-900">Verify Deposit</h3>
+                            <button onClick={closeVerificationModal} className="text-gray-400 hover:text-gray-600">
+                                <XCircle size={24} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            {/* Proof Display */}
+                            <div className="border rounded-xl p-4 bg-gray-50 flex flex-col items-center">
+                                <span className="text-sm font-medium text-gray-500 mb-2">Proof of Payment</span>
+                                {verificationModal.deposit?.proofUrl ? (
+                                    <img
+                                        src={verificationModal.deposit.proofUrl}
+                                        alt="Proof"
+                                        className="max-h-60 rounded-lg shadow-sm border"
+                                    />
+                                ) : (
+                                    <div className="h-32 w-full flex items-center justify-center text-gray-400 text-sm">
+                                        No proof image provided
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Amount Verification Input */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Verified Amount (₦)
+                                </label>
+                                <p className="text-xs text-gray-500 mb-2">
+                                    Original Request: <span className="font-semibold text-gray-900">₦{verificationModal.deposit?.amount.toLocaleString()}</span>
+                                </p>
+                                <input
+                                    type="number"
+                                    value={verificationModal.verifiedAmount}
+                                    onChange={(e) => setVerificationModal({ ...verificationModal, verifiedAmount: e.target.value })}
+                                    className="block w-full px-4 py-3 border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 text-lg font-semibold"
+                                />
+                                <p className="text-xs text-amber-600 mt-2">
+                                    * Ensure this matches the exact amount received in the bank account.
+                                </p>
+                            </div>
+
+                            <div className="flex gap-3 mt-6">
+                                <button
+                                    onClick={closeVerificationModal}
+                                    className="flex-1 py-3 border border-gray-200 rounded-xl font-bold text-gray-600 hover:bg-gray-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleVerifyApprove}
+                                    disabled={processingId === verificationModal.deposit?._id}
+                                    className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow-md shadow-emerald-200 disabled:opacity-50"
+                                >
+                                    {processingId ? <Loader2 className="animate-spin mx-auto" /> : 'Confirm & Approve'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

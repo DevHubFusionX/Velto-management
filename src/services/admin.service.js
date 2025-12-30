@@ -133,8 +133,8 @@ export const adminService = {
         return response.data;
     },
 
-    approveDeposit: async (depositId) => {
-        const response = await api.post(`/admin/deposits/${depositId}/approve`);
+    approveDeposit: async (depositId, data) => {
+        const response = await api.post(`/admin/deposits/${depositId}/approve`, data);
         return response.data;
     },
 
@@ -170,6 +170,20 @@ export const adminService = {
 
     revokeUserSession: async (userId) => {
         const response = await api.post(`/admin/users/${userId}/revoke-session`);
+        return response.data;
+    },
+
+    // Admin Notifications
+    getAdminNotifications: async () => {
+        const response = await api.get('/admin/notifications');
+        return response.data;
+    },
+    markAdminNotificationRead: async (id) => {
+        const response = await api.patch(`/admin/notifications/${id}/read`);
+        return response.data;
+    },
+    markAllAdminNotificationsRead: async () => {
+        const response = await api.post('/admin/notifications/mark-all-read');
         return response.data;
     }
 };

@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { cn, formatCurrency } from '../utils';
 import { adminService } from '../services/admin.service';
+import WithdrawalDetailModal from '../components/WithdrawalDetailModal';
 import { toast } from 'sonner';
 
 const WithdrawalManagement = () => {
@@ -20,6 +21,8 @@ const WithdrawalManagement = () => {
     const [withdrawals, setWithdrawals] = useState([]);
     const [loading, setLoading] = useState(true);
     const [processingId, setProcessingId] = useState(null);
+    const [selectedWithdrawal, setSelectedWithdrawal] = useState(null);
+    const [showDetailModal, setShowDetailModal] = useState(false);
 
     useEffect(() => {
         fetchWithdrawals();
@@ -97,6 +100,12 @@ const WithdrawalManagement = () => {
             </div>
         );
     }
+
+
+    const handleViewDetails = (withdrawal) => {
+        setSelectedWithdrawal(withdrawal);
+        setShowDetailModal(true);
+    };
 
     return (
         <div className="space-y-10 animate-in fade-in duration-700">
@@ -178,7 +187,7 @@ const WithdrawalManagement = () => {
                                 <th className="px-8 py-6 text-xs font-bold uppercase tracking-wider text-gray-400 text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-50">
+                        <tbody className="divide-y divide-gray-5">
                             {filteredWithdrawals.length > 0 ? (
                                 filteredWithdrawals.map((req, index) => (
                                     <tr key={req._id} className="hover:bg-gray-50/50 transition-colors group animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: `${index * 50}ms` }}>
@@ -250,7 +259,10 @@ const WithdrawalManagement = () => {
                                                         </button>
                                                     </>
                                                 ) : (
-                                                    <button className="px-6 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-500 hover:text-gray-700 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all">
+                                                    <button
+                                                        onClick={() => handleViewDetails(req)}
+                                                        className="px-6 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-500 hover:text-gray-700 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all"
+                                                    >
                                                         Details
                                                     </button>
                                                 )}
@@ -269,6 +281,12 @@ const WithdrawalManagement = () => {
                     </table>
                 </div>
             </div>
+
+            <WithdrawalDetailModal
+                isOpen={showDetailModal}
+                onClose={() => setShowDetailModal(false)}
+                withdrawal={selectedWithdrawal}
+            />
         </div>
     );
 };

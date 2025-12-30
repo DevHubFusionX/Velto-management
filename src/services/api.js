@@ -1,7 +1,11 @@
 import axios from 'axios';
 
+console.log('📡 Admin API URL:', import.meta.env.VITE_API_URL);
+console.log('🧪 Admin Test:', import.meta.env.VITE_TEST);
+console.log('📦 Admin Env:', import.meta.env);
+
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'https://velto-backend.onrender.com/api',
+    baseURL: import.meta.env.VITE_API_URL,
     headers: {
         'Content-Type': 'application/json'
     }
