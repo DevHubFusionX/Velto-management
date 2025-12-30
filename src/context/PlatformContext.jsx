@@ -23,11 +23,13 @@ export const PlatformProvider = ({ children }) => {
                 adminService.getPendingKYC(),
                 adminService.getWithdrawals()
             ]);
-            setStats(statsData);
-            setHealth(healthData);
-            setPendingKYC(kycData);
+            setStats(statsData || {});
+            setHealth(healthData || {});
+            setPendingKYC(Array.isArray(kycData) ? kycData : []);
+
             // Filter only pending withdrawals for the dashboard Capital Clearance section
-            const pendingOnly = withdrawalData.filter(w => w.status === 'Pending');
+            const withdrawals = Array.isArray(withdrawalData) ? withdrawalData : [];
+            const pendingOnly = withdrawals.filter(w => w.status === 'Pending');
             setPendingWithdrawals(pendingOnly);
         } catch (error) {
             console.error('Failed to fetch platform data:', error);

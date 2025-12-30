@@ -32,7 +32,7 @@ const WithdrawalManagement = () => {
         try {
             setLoading(true);
             const data = await adminService.getWithdrawals();
-            setWithdrawals(data);
+            setWithdrawals(Array.isArray(data) ? data : []);
         } catch (error) {
             console.error('Failed to fetch withdrawals:', error);
             toast.error('Failed to load withdrawals');
@@ -81,7 +81,7 @@ const WithdrawalManagement = () => {
                 return w.status === 'Completed' && txDate === today;
             })
             .reduce((sum, w) => sum + Math.abs(w.amount), 0),
-        pendingCount: withdrawals.filter(w => w.status === 'Pending').length
+        pendingCount: Array.isArray(withdrawals) ? withdrawals.filter(w => w.status === 'Pending').length : 0
     };
 
     // Filter withdrawals based on active tab

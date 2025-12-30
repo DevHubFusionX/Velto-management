@@ -35,7 +35,7 @@ const DepositManagement = () => {
         try {
             setLoading(true);
             const data = await adminService.getDeposits();
-            setDeposits(data);
+            setDeposits(Array.isArray(data) ? data : []);
         } catch (error) {
             console.error('Failed to fetch deposits:', error);
             toast.error('Failed to load deposits');
@@ -111,7 +111,7 @@ const DepositManagement = () => {
                 return d.status === 'Completed' && txDate === today;
             })
             .reduce((sum, d) => sum + d.amount, 0),
-        pendingCount: deposits.filter(d => d.status === 'Pending').length
+        pendingCount: Array.isArray(deposits) ? deposits.filter(d => d.status === 'Pending').length : 0
     };
 
     // Filter deposits based on active tab

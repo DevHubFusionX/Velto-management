@@ -25,11 +25,11 @@ const AdminDashboard = () => {
         );
     }
 
-    const displayStats = stats ? [
-        { title: 'Total Users', value: stats.users.total.toLocaleString(), change: stats.users.change, trend: stats.users.trend },
-        { title: 'Pending KYC', value: stats.kyc.pending, change: stats.kyc.change, trend: stats.kyc.trend },
-        { title: 'Active Investments', value: `₦${(stats.investments.totalValue / 1000).toFixed(1)}K`, change: `${stats.investments.active} active`, trend: stats.investments.trend },
-        { title: 'Clearance Queue', value: `₦${(stats.withdrawals.pending / 1000).toFixed(1)}K`, change: stats.withdrawals.change, trend: stats.withdrawals.trend },
+    const displayStats = stats?.users ? [
+        { title: 'Total Users', value: stats.users.total?.toLocaleString() || '0', change: stats.users.change, trend: stats.users.trend },
+        { title: 'Pending KYC', value: stats.kyc?.pending || '0', change: stats.kyc?.change, trend: stats.kyc?.trend },
+        { title: 'Active Investments', value: `₦${((stats.investments?.totalValue || 0) / 1000).toFixed(1)}K`, change: `${stats.investments?.active || 0} active`, trend: stats.investments?.trend },
+        { title: 'Clearance Queue', value: `₦${((stats.withdrawals?.pending || 0) / 1000).toFixed(1)}K`, change: stats.withdrawals?.change, trend: stats.withdrawals?.trend },
     ] : [];
 
     return (

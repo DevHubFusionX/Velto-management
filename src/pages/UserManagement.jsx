@@ -22,6 +22,10 @@ const UserManagement = () => {
     const fetchUsers = async () => {
         try {
             const data = await adminService.getUsers();
+            if (!Array.isArray(data)) {
+                setUsers([]);
+                return;
+            }
             const formattedUsers = data.map(u => ({
                 id: u._id,
                 name: u.name,
