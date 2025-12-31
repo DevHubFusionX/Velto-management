@@ -1,9 +1,9 @@
-export const formatCurrency = (amount, currency = 'NGN') => {
-    const formatter = new Intl.NumberFormat(currency === 'NGN' ? 'en-NG' : 'en-US', {
+export const formatCurrency = (amount, currency = 'USD') => {
+    const formatter = new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: currency,
         minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
+        maximumFractionDigits: 2,
     });
     return formatter.format(amount);
 };

@@ -373,7 +373,7 @@ const DepositManagement = () => {
                                     className="block w-full px-4 py-3 border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 text-lg font-semibold"
                                 />
                                 <p className="text-xs text-amber-600 mt-2">
-                                    * Ensure this matches the exact amount received in the bank account.
+                                    * Ensure this matches the exact amount received in the crypto wallet.
                                 </p>
                             </div>
 

@@ -10,7 +10,7 @@ const WithdrawalQueue = ({ requests }) => {
 
     const formatCurrency = (val) => {
         const absVal = Math.abs(val);
-        return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', maximumFractionDigits: 0 }).format(absVal);
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(absVal);
     };
 
     const handleAction = async (id, action, ...args) => {
