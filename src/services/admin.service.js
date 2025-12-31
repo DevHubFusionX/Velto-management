@@ -193,5 +193,57 @@ export const adminService = {
     markAllAdminNotificationsRead: async () => {
         const response = await api.post('/admin/notifications/mark-all-read');
         return response.data;
+    },
+
+    // --- Crypto Wallet Management ---
+    getAdminCryptoWallets: async () => {
+        const response = await api.get('/admin/crypto/wallets');
+        return response.data;
+    },
+
+    createCryptoWallet: async (data) => {
+        const response = await api.post('/admin/crypto/wallets', data);
+        return response.data;
+    },
+
+    updateCryptoWallet: async (id, data) => {
+        const response = await api.put(`/admin/crypto/wallets/${id}`, data);
+        return response.data;
+    },
+
+    deleteCryptoWallet: async (id) => {
+        const response = await api.delete(`/admin/crypto/wallets/${id}`);
+        return response.data;
+    },
+
+    // --- Crypto Transaction Management ---
+    getCryptoDeposits: async () => {
+        const response = await api.get('/admin/crypto/deposits');
+        return response.data;
+    },
+
+    approveCryptoDeposit: async (id, data) => {
+        const response = await api.post(`/admin/crypto/deposits/${id}/approve`, data);
+        return response.data;
+    },
+
+    rejectCryptoDeposit: async (id, reason) => {
+        const response = await api.post(`/admin/crypto/deposits/${id}/reject`, { reason });
+        return response.data;
+    },
+
+    getCryptoWithdrawals: async () => {
+        const response = await api.get('/admin/crypto/withdrawals');
+        return response.data;
+    },
+
+    approveCryptoWithdrawal: async (id, txHash) => {
+        const response = await api.post(`/admin/crypto/withdrawals/${id}/approve`, { txHash });
+        return response.data;
+    },
+
+    rejectCryptoWithdrawal: async (id, reason) => {
+        const response = await api.post(`/admin/crypto/withdrawals/${id}/reject`, { reason });
+        return response.data;
     }
 };

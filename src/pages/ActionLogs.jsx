@@ -20,7 +20,7 @@ const ActionLogs = () => {
         { id: '1', action: 'Asset Strategic Shift', admin: 'Prime Admin', date: '2024-10-15 10:30:12', type: 'Strategy', status: 'Verified', details: 'Treasury ROI updated to 15.5%' },
         { id: '2', user: 'Sarah Wilson', action: 'Neural Identity Cleared', admin: 'System Engine', date: '2024-10-15 09:12:45', type: 'Validation', status: 'Verified', details: 'KYC Tier 2 automated approval' },
         { id: '3', action: 'System Kernel Patch', admin: 'Prime Admin', date: '2024-10-15 08:00:00', type: 'Maintenance', status: 'Nominal', details: 'API v2.4 deployment successful' },
-        { id: '4', user: 'Michael Chen', action: 'Capital Restricted', admin: 'Risk Module', date: '2024-10-14 23:45:10', type: 'Security', status: 'Alert', details: 'Suspicious withdrawal attempt of ₦2M' },
+        { id: '4', user: 'Michael Chen', action: 'Capital Restricted', admin: 'Risk Module', date: '2024-10-14 23:45:10', type: 'Security', status: 'Alert', details: 'Suspicious withdrawal attempt of $12K' },
     ];
 
     return (

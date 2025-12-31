@@ -189,7 +189,7 @@ const InvestmentChart = ({ data }) => {
                                     textAnchor="middle"
                                     className="text-[11px] font-black fill-gray-900"
                                 >
-                                    ₦{p.value.toLocaleString()}
+                                    ${p.value.toLocaleString()}
                                 </text>
                             </g>
                         </g>

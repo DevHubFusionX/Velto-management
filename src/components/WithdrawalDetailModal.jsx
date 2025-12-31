@@ -51,7 +51,7 @@ const WithdrawalDetailModal = ({ isOpen, onClose, withdrawal }) => {
                     <div className="flex flex-col items-center justify-center p-6 bg-gray-50 rounded-2xl border border-gray-100">
                         <span className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">Net Amount</span>
                         <h3 className="text-4xl font-black text-gray-900 tracking-tight">
-                            ₦{Math.abs(withdrawal.amount).toLocaleString()}
+                            ${Math.abs(withdrawal.amount).toLocaleString()}
                         </h3>
                         <div className={`mt-4 flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${getStatusColor(withdrawal.status)}`}>
                             {getStatusIcon(withdrawal.status)}
@@ -82,16 +82,16 @@ const WithdrawalDetailModal = ({ isOpen, onClose, withdrawal }) => {
                     {/* Recipient Details */}
                     <div className="space-y-4">
                         <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
-                            <Building size={14} className="text-blue-500" /> Banking Destination
+                            <Building size={14} className="text-blue-500" /> Destination Details
                         </h3>
                         <div className="bg-blue-50/50 rounded-xl border border-blue-100 p-4 space-y-3">
                             <div className="flex items-center justify-between">
-                                <span className="text-xs text-gray-500 font-medium">Bank Name</span>
-                                <span className="text-sm font-bold text-gray-900">{bankName}</span>
+                                <span className="text-xs text-gray-500 font-medium">Platform/Network</span>
+                                <span className="text-sm font-bold text-gray-900">{withdrawal.cryptoCurrency || bankName}</span>
                             </div>
                             <div className="flex items-center justify-between">
-                                <span className="text-xs text-gray-500 font-medium">Account Number</span>
-                                <span className="text-sm font-bold text-gray-900 font-mono tracking-wider">{accountNumber}</span>
+                                <span className="text-xs text-gray-500 font-medium">Address</span>
+                                <span className="text-sm font-bold text-gray-900 font-mono tracking-wider">{withdrawal.cryptoAddress || accountNumber}</span>
                             </div>
                             <div className="flex items-center justify-between">
                                 <span className="text-xs text-gray-500 font-medium">Account Name</span>

@@ -74,7 +74,7 @@ const DepositManagement = () => {
 
             await adminService.approveDeposit(deposit._id, { verifiedAmount });
 
-            toast.success(`Deposit verified and approved for ₦${verifiedAmount}`);
+            toast.success(`Deposit verified and approved for $${verifiedAmount}`);
             closeVerificationModal();
             await fetchDeposits();
         } catch (error) {
@@ -178,8 +178,8 @@ const DepositManagement = () => {
             {/* Stats Summary */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[
-                    { label: 'Pending Verification', value: `₦${(stats.pendingTotal / 1000).toFixed(1)}K`, color: 'text-amber-500', icon: Clock, bg: 'bg-amber-50' },
-                    { label: 'Approved Today', value: `₦${(stats.clearedToday / 1000).toFixed(1)}K`, color: 'text-emerald-500', icon: CheckCircle2, bg: 'bg-emerald-50' },
+                    { label: 'Pending Verification', value: `$${(stats.pendingTotal / 1000).toFixed(1)}K`, color: 'text-amber-500', icon: Clock, bg: 'bg-amber-50' },
+                    { label: 'Approved Today', value: `$${(stats.clearedToday / 1000).toFixed(1)}K`, color: 'text-emerald-500', icon: CheckCircle2, bg: 'bg-emerald-50' },
                     { label: 'Network Stability', value: '98.2%', color: 'text-blue-500', icon: Zap, bg: 'bg-blue-50' },
                 ].map((stat, i) => (
                     <div key={i} className="premium-card p-6 flex items-center gap-6 group">
@@ -225,11 +225,16 @@ const DepositManagement = () => {
                                         <td className="px-8 py-6">
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-bold text-gray-900 tracking-tight">
-                                                    ₦{deposit.amount.toLocaleString()}
+                                                    ${deposit.amount.toLocaleString()}
                                                 </span>
                                                 <span className="text-[10px] text-gray-400 font-mono uppercase tracking-widest mt-1">
-                                                    {deposit.reference}
+                                                    {deposit.cryptoCurrency || deposit.method || 'Crypto'}
                                                 </span>
+                                                {deposit.txHash && (
+                                                    <span className="mt-1 text-[9px] text-blue-500 font-mono truncate max-w-[120px]" title={deposit.txHash}>
+                                                        TX: {deposit.txHash}
+                                                    </span>
+                                                )}
                                             </div>
                                         </td>
                                         <td className="px-8 py-6">
@@ -249,7 +254,7 @@ const DepositManagement = () => {
                                                     )}
                                                 </div>
                                                 <span className="text-xs font-medium text-gray-600 capitalize">
-                                                    {deposit.method || 'Card'}
+                                                    {deposit.method || 'Crypto'}
                                                 </span>
                                             </div>
                                         </td>
@@ -265,6 +270,9 @@ const DepositManagement = () => {
                                                         deposit.status === 'Pending' ? "bg-amber-500" : "bg-rose-500"
                                                 )} />
                                                 {deposit.status}
+                                                {deposit.description?.includes('Manual Proof Submitted') && (
+                                                    <span className="ml-1 px-1 py-0.5 bg-blue-100 text-blue-700 rounded text-[7px] font-black">PROOFED</span>
+                                                )}
                                             </div>
                                         </td>
                                         <td className="px-8 py-6">
@@ -337,13 +345,26 @@ const DepositManagement = () => {
                                 )}
                             </div>
 
+                            {/* TX Hash Display */}
+                            {verificationModal.deposit?.txHash && (
+                                <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 p-2 opacity-10">
+                                        <Zap size={40} className="text-blue-600" />
+                                    </div>
+                                    <p className="text-[10px] text-blue-600 font-black uppercase tracking-widest mb-1">Blockchain TXID</p>
+                                    <p className="text-sm font-mono text-gray-900 break-all leading-relaxed bg-white/50 p-2 rounded border border-blue-200">
+                                        {verificationModal.deposit.txHash}
+                                    </p>
+                                </div>
+                            )}
+
                             {/* Amount Verification Input */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Verified Amount (₦)
+                                    Verified Amount ($)
                                 </label>
                                 <p className="text-xs text-gray-500 mb-2">
-                                    Original Request: <span className="font-semibold text-gray-900">₦{verificationModal.deposit?.amount.toLocaleString()}</span>
+                                    Original Request: <span className="font-semibold text-gray-900">${verificationModal.deposit?.amount.toLocaleString()}</span>
                                 </p>
                                 <input
                                     type="number"

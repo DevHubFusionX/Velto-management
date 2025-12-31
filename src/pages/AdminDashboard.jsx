@@ -28,8 +28,8 @@ const AdminDashboard = () => {
     const displayStats = stats?.users ? [
         { title: 'Total Users', value: stats.users.total?.toLocaleString() || '0', change: stats.users.change, trend: stats.users.trend },
         { title: 'Pending KYC', value: stats.kyc?.pending || '0', change: stats.kyc?.change, trend: stats.kyc?.trend },
-        { title: 'Active Investments', value: `₦${((stats.investments?.totalValue || 0) / 1000).toFixed(1)}K`, change: `${stats.investments?.active || 0} active`, trend: stats.investments?.trend },
-        { title: 'Clearance Queue', value: `₦${((stats.withdrawals?.pending || 0) / 1000).toFixed(1)}K`, change: stats.withdrawals?.change, trend: stats.withdrawals?.trend },
+        { title: 'Active Investments', value: `$${((stats.investments?.totalValue || 0) / 1000).toFixed(1)}K`, change: `${stats.investments?.active || 0} active`, trend: stats.investments?.trend },
+        { title: 'Clearance Queue', value: `$${((stats.withdrawals?.pending || 0) / 1000).toFixed(1)}K`, change: stats.withdrawals?.change, trend: stats.withdrawals?.trend },
     ] : [];
 
     return (
@@ -60,7 +60,7 @@ const AdminDashboard = () => {
             {/* Charts Row */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <InvestmentChart data={stats?.revenue.growth} />
-                <RevenueBreakdown data={stats?.revenue.breakdown} total={stats ? `${(stats.users.totalBalance / 1000000).toFixed(2)}M` : '0'} />
+                <RevenueBreakdown data={stats?.revenue.breakdown} total={stats ? `${(stats.users.totalBalance / 1000).toFixed(1)}K` : '0'} />
             </div>
 
             {/* Bottom Section: Tables Grid */}

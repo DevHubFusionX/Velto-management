@@ -34,9 +34,9 @@ const UserManagement = () => {
                 status: u.suspended ? 'Suspended' : 'Active',
                 kyc: u.kycStatus === 'Approved' ? 'Verified' : u.kycStatus || 'Unverified',
                 emailVerified: u.isEmailVerified || false,
-                balance: `₦${(u.totalBalance || 0).toLocaleString()}`,
-                totalInvested: `₦${(u.totalInvestedCalculated || 0).toLocaleString()}`,
-                activeHoldings: `₦${(u.activeHoldings || 0).toLocaleString()}`
+                balance: `$${(u.totalBalance || 0).toLocaleString()}`,
+                totalInvested: `$${(u.totalInvestedCalculated || 0).toLocaleString()}`,
+                activeHoldings: `$${(u.activeHoldings || 0).toLocaleString()}`
             }));
             setUsers(formattedUsers);
         } catch (error) {
@@ -54,7 +54,7 @@ const UserManagement = () => {
     const handleViewDetails = async (userId) => {
         try {
             const details = await adminService.getUserDetails(userId);
-            alert(`User Details:\nName: ${details.name}\nEmail: ${details.email}\nBalance: ₦${details.totalBalance}\nTotal Investments: ${details.totalInvestments}\nActive Investments: ${details.activeInvestments}`);
+            alert(`User Details:\nName: ${details.name}\nEmail: ${details.email}\nBalance: $${details.totalBalance}\nTotal Investments: ${details.totalInvestments}\nActive Investments: ${details.activeInvestments}`);
         } catch (error) {
             console.error('Failed to fetch user details', error);
             toast.error('Failed to load user details');

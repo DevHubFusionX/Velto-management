@@ -12,8 +12,8 @@ const UserDetailModal = ({ isOpen, onClose, user }) => {
                     <div>
                         <h2 className="text-xl font-bold text-gray-900">{user.name}</h2>
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-2 ${user.suspended
-                                ? 'bg-red-100 text-red-800'
-                                : 'bg-green-100 text-green-800'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-green-100 text-green-800'
                             }`}>
                             {user.suspended ? 'Suspended' : 'Active'}
                         </span>
@@ -34,7 +34,7 @@ const UserDetailModal = ({ isOpen, onClose, user }) => {
                                 <Wallet size={18} />
                                 <span className="text-xs font-bold uppercase tracking-wider">Balance</span>
                             </div>
-                            <p className="text-xl font-black text-gray-900">₦{(user.totalBalance || 0).toLocaleString()}</p>
+                            <p className="text-xl font-black text-gray-900">${(user.totalBalance || 0).toLocaleString()}</p>
                         </div>
                         <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100">
                             <div className="flex items-center gap-2 text-emerald-600 mb-2">
@@ -100,12 +100,12 @@ const UserDetailModal = ({ isOpen, onClose, user }) => {
                                                 <td className="px-4 py-3 font-medium text-gray-900">{tx.type}</td>
                                                 <td className="px-4 py-3 text-gray-600">
                                                     {tx.type === 'Withdrawal' ? '-' : '+'}
-                                                    ₦{Math.abs(tx.amount).toLocaleString()}
+                                                    ${Math.abs(tx.amount).toLocaleString()}
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${tx.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                                                            tx.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                                                                'bg-red-100 text-red-800'
+                                                        tx.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                                                            'bg-red-100 text-red-800'
                                                         }`}>
                                                         {tx.status}
                                                     </span>

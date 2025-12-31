@@ -11,10 +11,16 @@ import {
     RefreshCw,
     Wallet,
     Percent,
-    Loader2
+    Loader2,
+    Plus,
+    Trash2,
+    Edit2,
+    Copy,
+    Check
 } from 'lucide-react';
 import { adminService } from '../services/admin.service';
 import { useToast } from '../context/ToastContext';
+import { usePlatform } from '../context/PlatformContext';
 import { cn } from '../utils';
 
 const SettingSection = ({ title, icon: Icon, children, description }) => (
@@ -66,13 +72,28 @@ const InputField = ({ label, value, onChange, type = "number", suffix, prefix, h
 );
 
 const PlatformSettings = () => {
-    const { addToast } = useToast();
+    const toast = useToast();
+    const { health, handleToggleSystemFreeze, refreshData } = usePlatform();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [settings, setSettings] = useState(null);
+    const [wallets, setWallets] = useState([]);
+    const [walletsLoading, setWalletsLoading] = useState(false);
+
+    // New Wallet Modal State
+    const [showWalletModal, setShowWalletModal] = useState(false);
+    const [editingWallet, setEditingWallet] = useState(null);
+    const [walletForm, setWalletForm] = useState({
+        currency: 'BTC',
+        address: '',
+        network: '',
+        label: '',
+        isActive: true
+    });
 
     useEffect(() => {
         fetchSettings();
+        fetchWallets();
     }, []);
 
     const fetchSettings = async () => {
@@ -81,7 +102,7 @@ const PlatformSettings = () => {
             const data = await adminService.getSettings();
             setSettings(data);
         } catch (error) {
-            addToast('Failed to load settings', 'error');
+            toast.error('Failed to load settings');
         } finally {
             setLoading(false);
         }
@@ -91,19 +112,66 @@ const PlatformSettings = () => {
         try {
             setSaving(true);
             await adminService.updateSettings(settings);
-            addToast('Settings updated successfully', 'success');
+            toast.success('Settings updated successfully');
         } catch (error) {
-            addToast('Failed to update settings', 'error');
+            toast.error('Failed to update settings');
         } finally {
             setSaving(false);
         }
     };
 
-    const toggleMaintenance = () => {
-        setSettings(prev => ({
-            ...prev,
-            maintenanceMode: !prev.maintenanceMode
-        }));
+    const fetchWallets = async () => {
+        try {
+            setWalletsLoading(true);
+            const data = await adminService.getAdminCryptoWallets();
+            setWallets(data || []);
+        } catch (error) {
+            console.error('Failed to load wallets:', error);
+            toast.error('Failed to load crypto wallets');
+        } finally {
+            setWalletsLoading(false);
+        }
+    };
+
+    const handleSaveWallet = async () => {
+        try {
+            if (editingWallet) {
+                await adminService.updateCryptoWallet(editingWallet._id, walletForm);
+                toast.success('Wallet updated');
+            } else {
+                await adminService.createCryptoWallet(walletForm);
+                toast.success('Wallet created');
+            }
+            setShowWalletModal(false);
+            fetchWallets();
+        } catch (error) {
+            toast.error('Failed to save wallet');
+        }
+    };
+
+    const handleDeleteWallet = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this wallet?')) return;
+        try {
+            await adminService.deleteCryptoWallet(id);
+            toast.success('Wallet deleted');
+            fetchWallets();
+        } catch (error) {
+            toast.error('Failed to delete wallet');
+        }
+    };
+
+    const handleCopy = (text) => {
+        navigator.clipboard.writeText(text);
+        toast.success('Address copied');
+    };
+
+    const toggleMaintenance = async () => {
+        try {
+            await handleToggleSystemFreeze();
+            fetchSettings(); // Refresh settings to show updated status
+        } catch (error) {
+            toast.error('Maintenance toggle failed');
+        }
     };
 
     if (loading) {
@@ -111,6 +179,27 @@ const PlatformSettings = () => {
             <div className="flex flex-col items-center justify-center py-40">
                 <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
                 <p className="text-gray-400 font-black uppercase tracking-widest text-xs">Accessing System Core...</p>
+            </div>
+        );
+    }
+
+    if (!settings) {
+        return (
+            <div className="flex flex-col items-center justify-center py-40 px-6 text-center">
+                <div className="w-20 h-20 rounded-3xl bg-red-50 flex items-center justify-center text-red-500 mb-6 shadow-xl shadow-red-100/50">
+                    <Shield size={40} />
+                </div>
+                <h3 className="text-2xl font-black text-gray-900 mb-2">Connection Severed</h3>
+                <p className="text-gray-500 font-medium max-w-sm mb-8">The platform engine is currently unreachable. Please verify backend status and security credentials.</p>
+                <button
+                    onClick={() => {
+                        fetchSettings();
+                        fetchWallets();
+                    }}
+                    className="px-10 py-4 bg-gray-900 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-blue-600 transition-all hover:scale-105 active:scale-95"
+                >
+                    Re-establish Uplink
+                </button>
             </div>
         );
     }
@@ -133,7 +222,7 @@ const PlatformSettings = () => {
                             <div className="w-1 h-1 rounded-full bg-gray-200" />
                             <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
                                 <RefreshCw size={12} className={saving ? 'animate-spin' : ''} />
-                                Last Sync: {new Date(settings.updatedAt).toLocaleTimeString()}
+                                Last Sync: {settings?.updatedAt ? new Date(settings.updatedAt).toLocaleTimeString() : 'Never'}
                             </span>
                         </div>
                     </div>
@@ -161,23 +250,23 @@ const PlatformSettings = () => {
                 >
                     <div className={cn(
                         "p-6 rounded-2xl border transition-all duration-500 flex items-center justify-between group/m",
-                        settings.maintenanceMode
+                        health?.status === 'Maintenance'
                             ? "bg-red-50/50 border-red-100 ring-4 ring-red-500/5"
                             : "bg-emerald-50/50 border-emerald-100 ring-4 ring-emerald-500/5"
                     )}>
                         <div className="flex gap-4">
                             <div className={cn(
                                 "w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-500",
-                                settings.maintenanceMode ? "bg-red-600 text-white shadow-lg shadow-red-200" : "bg-emerald-600 text-white shadow-lg shadow-emerald-200"
+                                health?.status === 'Maintenance' ? "bg-red-600 text-white shadow-lg shadow-red-200" : "bg-emerald-600 text-white shadow-lg shadow-emerald-200"
                             )}>
-                                {settings.maintenanceMode ? <Lock size={20} /> : <Unlock size={20} />}
+                                {health?.status === 'Maintenance' ? <Lock size={20} /> : <Unlock size={20} />}
                             </div>
                             <div>
-                                <h4 className={cn("text-sm font-black uppercase tracking-widest", settings.maintenanceMode ? "text-red-700" : "text-emerald-700")}>
-                                    {settings.maintenanceMode ? "Maintenance Active" : "Systems Nominal"}
+                                <h4 className={cn("text-sm font-black uppercase tracking-widest", health?.status === 'Maintenance' ? "text-red-700" : "text-emerald-700")}>
+                                    {health?.status === 'Maintenance' ? "Maintenance Active" : "Systems Nominal"}
                                 </h4>
                                 <p className="text-[11px] text-gray-500 font-medium mt-1 leading-relaxed max-w-[180px]">
-                                    {settings.maintenanceMode
+                                    {health?.status === 'Maintenance'
                                         ? "Dashboard access is restricted. Transaction processing is frozen."
                                         : "All systems operational. User access is unrestricted."}
                                 </p>
@@ -187,12 +276,12 @@ const PlatformSettings = () => {
                             onClick={toggleMaintenance}
                             className={cn(
                                 "relative w-14 h-8 rounded-full transition-all duration-500 p-1 group-hover/m:scale-110",
-                                settings.maintenanceMode ? "bg-red-600" : "bg-emerald-600"
+                                health?.status === 'Maintenance' ? "bg-red-600" : "bg-emerald-600"
                             )}
                         >
                             <div className={cn(
                                 "w-6 h-6 bg-white rounded-full transition-all duration-500 shadow-md",
-                                settings.maintenanceMode ? "translate-x-6" : "translate-x-0"
+                                health?.status === 'Maintenance' ? "translate-x-6" : "translate-x-0"
                             )} />
                         </button>
                     </div>
@@ -208,16 +297,16 @@ const PlatformSettings = () => {
                         <div className="grid grid-cols-2 gap-4">
                             <InputField
                                 label="Reward Percentage"
-                                value={settings.referral?.rewardPercent}
+                                value={settings?.referral?.rewardPercent}
                                 onChange={(val) => setSettings(s => ({ ...s, referral: { ...s.referral, rewardPercent: parseFloat(val) } }))}
                                 suffix="%"
                                 helper="Percentage of the referred user's first investment."
                             />
                             <InputField
                                 label="Max Reward Per User"
-                                value={settings.referral?.maxRewardPerReferral}
+                                value={settings?.referral?.maxRewardPerReferral}
                                 onChange={(val) => setSettings(s => ({ ...s, referral: { ...s.referral, maxRewardPerReferral: parseFloat(val) } }))}
-                                prefix="₦"
+                                prefix="$"
                                 helper="Maximum bonus amount for a single referral."
                             />
                         </div>
@@ -225,15 +314,15 @@ const PlatformSettings = () => {
                         <div className="grid grid-cols-2 gap-4">
                             <InputField
                                 label="Max Referrals Lifetime"
-                                value={settings.referral?.maxReferralsLifetime}
+                                value={settings?.referral?.maxReferralsLifetime}
                                 onChange={(val) => setSettings(s => ({ ...s, referral: { ...s.referral, maxReferralsLifetime: parseInt(val) } }))}
                                 helper="Limit on total referrals per user."
                             />
                             <InputField
                                 label="Max Earnings Lifetime"
-                                value={settings.referral?.maxEarningsLifetime}
+                                value={settings?.referral?.maxEarningsLifetime}
                                 onChange={(val) => setSettings(s => ({ ...s, referral: { ...s.referral, maxEarningsLifetime: parseFloat(val) } }))}
-                                prefix="₦"
+                                prefix="$"
                                 helper="Total referral earnings limit per user."
                             />
                         </div>
@@ -241,7 +330,7 @@ const PlatformSettings = () => {
                         <div className="grid grid-cols-2 gap-4">
                             <InputField
                                 label="Unlock Period"
-                                value={settings.referral?.unlockDays}
+                                value={settings?.referral?.unlockDays}
                                 onChange={(val) => setSettings(s => ({ ...s, referral: { ...s.referral, unlockDays: parseInt(val) } }))}
                                 suffix="Days"
                                 helper="Wait time before reward matures."
@@ -258,11 +347,11 @@ const PlatformSettings = () => {
                                     <span className="text-sm font-bold text-gray-800">Active Investment</span>
                                     <div className={cn(
                                         "w-10 h-6 rounded-full p-1 transition-all duration-500",
-                                        settings.referral?.activeInvestmentRequired ? "bg-blue-600" : "bg-gray-200"
+                                        settings?.referral?.activeInvestmentRequired ? "bg-blue-600" : "bg-gray-200"
                                     )}>
                                         <div className={cn(
                                             "w-4 h-4 bg-white rounded-full transition-all duration-500 shadow-sm",
-                                            settings.referral?.activeInvestmentRequired ? "translate-x-4" : "translate-x-0"
+                                            settings?.referral?.activeInvestmentRequired ? "translate-x-4" : "translate-x-0"
                                         )} />
                                     </div>
                                 </div>
@@ -272,40 +361,44 @@ const PlatformSettings = () => {
                     </div>
                 </SettingSection>
 
-                {/* Financial Architecture */}
+                {/* Crypto Architecture */}
                 <SettingSection
-                    title="Financial Gates"
+                    title="Crypto Protocol"
                     icon={Wallet}
-                    description="Transactional limits and boundary parameters"
+                    description="Blockchain parameters and transactional boundaries"
                 >
                     <div className="space-y-8">
+                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 mb-4">
+                            <div className="flex items-center gap-3">
+                                <div className={cn("w-3 h-3 rounded-full", settings?.crypto?.enabled ? "bg-emerald-500 animate-pulse" : "bg-gray-400")} />
+                                <span className="text-sm font-bold text-gray-700 uppercase tracking-wider">Crypto Gateway {settings?.crypto?.enabled ? 'Active' : 'Offline'}</span>
+                            </div>
+                            <button
+                                onClick={() => setSettings(s => ({ ...s, crypto: { ...s?.crypto, enabled: !s?.crypto?.enabled } }))}
+                                className={cn(
+                                    "px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                                    settings?.crypto?.enabled ? "bg-red-50 text-red-600 hover:bg-red-100" : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+                                )}
+                            >
+                                {settings?.crypto?.enabled ? 'Disable' : 'Enable'}
+                            </button>
+                        </div>
+
                         <div className="space-y-4">
                             <div className="flex items-center gap-2 mb-2">
                                 <div className="w-1 h-4 bg-blue-500 rounded-full" />
-                                <h4 className="text-xs font-black text-gray-800 uppercase tracking-widest">Deposit Boundaries</h4>
+                                <h4 className="text-xs font-black text-gray-800 uppercase tracking-widest">Inbound Boundaries (USD)</h4>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <InputField
-                                    label="Min (NGN)"
-                                    value={settings.limits.deposit.min.ngn}
-                                    onChange={(val) => setSettings(s => ({ ...s, limits: { ...s.limits, deposit: { ...s.limits.deposit, min: { ...s.limits.deposit.min, ngn: parseFloat(val) } } } }))}
-                                />
-                                <InputField
-                                    label="Min (USD)"
-                                    value={settings.limits.deposit.min.usd}
+                                    label="Min Deposit"
+                                    value={settings?.limits?.deposit?.min?.usd}
                                     onChange={(val) => setSettings(s => ({ ...s, limits: { ...s.limits, deposit: { ...s.limits.deposit, min: { ...s.limits.deposit.min, usd: parseFloat(val) } } } }))}
                                     prefix="$"
                                 />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
                                 <InputField
-                                    label="Max (NGN)"
-                                    value={settings.limits.deposit.max.ngn}
-                                    onChange={(val) => setSettings(s => ({ ...s, limits: { ...s.limits, deposit: { ...s.limits.deposit, max: { ...s.limits.deposit.max, ngn: parseFloat(val) } } } }))}
-                                />
-                                <InputField
-                                    label="Max (USD)"
-                                    value={settings.limits.deposit.max.usd}
+                                    label="Max Deposit"
+                                    value={settings?.limits?.deposit?.max?.usd}
                                     onChange={(val) => setSettings(s => ({ ...s, limits: { ...s.limits, deposit: { ...s.limits.deposit, max: { ...s.limits.deposit.max, usd: parseFloat(val) } } } }))}
                                     prefix="$"
                                 />
@@ -315,25 +408,175 @@ const PlatformSettings = () => {
                         <div className="space-y-4 pt-4 border-t border-gray-50">
                             <div className="flex items-center gap-2 mb-2">
                                 <div className="w-1 h-4 bg-emerald-500 rounded-full" />
-                                <h4 className="text-xs font-black text-gray-800 uppercase tracking-widest">Withdrawal Boundaries</h4>
+                                <h4 className="text-xs font-black text-gray-800 uppercase tracking-widest">Outbound Boundaries (USD)</h4>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <InputField
-                                    label="Min (NGN)"
-                                    value={settings.limits.withdrawal.min.ngn}
-                                    onChange={(val) => setSettings(s => ({ ...s, limits: { ...s.limits, withdrawal: { ...s.limits.withdrawal, min: { ...s.limits.withdrawal.min, ngn: parseFloat(val) } } } }))}
+                                    label="Min Withdrawal"
+                                    value={settings?.limits?.withdrawal?.min?.usd}
+                                    onChange={(val) => setSettings(s => ({ ...s, limits: { ...s.limits, withdrawal: { ...s.limits.withdrawal, min: { ...s.limits.withdrawal.min, usd: parseFloat(val) } } } }))}
+                                    prefix="$"
                                 />
                                 <InputField
-                                    label="Min (USD)"
-                                    value={settings.limits.withdrawal.min.usd}
-                                    onChange={(val) => setSettings(s => ({ ...s, limits: { ...s.limits, withdrawal: { ...s.limits.withdrawal, min: { ...s.limits.withdrawal.min, usd: parseFloat(val) } } } }))}
+                                    label="Max Withdrawal"
+                                    value={settings?.limits?.withdrawal?.max?.usd}
+                                    onChange={(val) => setSettings(s => ({ ...s, limits: { ...s.limits, withdrawal: { ...s.limits.withdrawal, max: { ...s.limits.withdrawal.max, usd: parseFloat(val) } } } }))}
                                     prefix="$"
                                 />
                             </div>
                         </div>
                     </div>
                 </SettingSection>
+
+                {/* Crypto Wallets Control */}
+                <div className="md:col-span-2">
+                    <SettingSection
+                        title="Admin Deposit Wallets"
+                        icon={Wallet}
+                        description="Manage the addresses used for customer deposits"
+                    >
+                        <div className="flex justify-between items-center mb-6">
+                            <p className="text-xs text-gray-500 font-medium">Configure wallets for each supported network. Revisit regularily to ensure security.</p>
+                            <button
+                                onClick={() => {
+                                    setEditingWallet(null);
+                                    setWalletForm({ currency: 'BTC', address: '', network: '', label: '', isActive: true });
+                                    setShowWalletModal(true);
+                                }}
+                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
+                            >
+                                <Plus size={14} />
+                                Add New Wallet
+                            </button>
+                        </div>
+
+                        {walletsLoading ? (
+                            <div className="flex justify-center py-12">
+                                <Loader2 className="animate-spin text-blue-600" />
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {wallets.map(wallet => (
+                                    <div key={wallet._id} className="p-5 rounded-2xl bg-gray-50 border border-gray-100 hover:border-blue-200 transition-all group/wallet relative overflow-hidden">
+                                        <div className="flex items-start justify-between relative z-10">
+                                            <div className="flex gap-4">
+                                                <div className="w-12 h-12 rounded-xl bg-white border border-gray-100 flex items-center justify-center shadow-sm">
+                                                    <span className="text-sm font-black text-blue-600">{wallet.currency}</span>
+                                                </div>
+                                                <div>
+                                                    <div className="flex items-center gap-2">
+                                                        <h4 className="text-sm font-bold text-gray-800">{wallet.label || wallet.currency}</h4>
+                                                        {!wallet.isActive && <span className="text-[8px] font-black text-red-500 uppercase px-1.5 py-0.5 bg-red-50 rounded">Inactive</span>}
+                                                    </div>
+                                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">{wallet.network}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-1 opacity-0 group-hover/wallet:opacity-100 transition-opacity">
+                                                <button
+                                                    onClick={() => {
+                                                        setEditingWallet(wallet);
+                                                        setWalletForm({ ...wallet });
+                                                        setShowWalletModal(true);
+                                                    }}
+                                                    className="p-2 text-gray-400 hover:text-blue-600 bg-white border border-gray-100 rounded-lg shadow-sm"
+                                                >
+                                                    <Edit2 size={14} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteWallet(wallet._id)}
+                                                    className="p-2 text-gray-400 hover:text-red-500 bg-white border border-gray-100 rounded-lg shadow-sm"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="mt-4 p-3 bg-white rounded-xl border border-gray-100 flex items-center justify-between gap-4">
+                                            <span className="text-[10px] font-mono text-gray-500 truncate">{wallet.address}</span>
+                                            <button
+                                                onClick={() => handleCopy(wallet.address)}
+                                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                            >
+                                                <Copy size={14} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                                {wallets.length === 0 && (
+                                    <div className="col-span-2 py-12 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                                        <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">No wallets configured</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </SettingSection>
+                </div>
             </div>
+
+            {/* Wallet Modal */}
+            {showWalletModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={() => setShowWalletModal(false)} />
+                    <div className="relative bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl animate-in zoom-in-95 duration-300">
+                        <h3 className="text-xl font-bold text-gray-900 mb-6">{editingWallet ? 'Edit Wallet' : 'Add New Wallet'}</h3>
+                        <div className="space-y-4">
+                            <InputField
+                                label="Currency Symbol"
+                                type="text"
+                                value={walletForm.currency}
+                                onChange={(val) => setWalletForm({ ...walletForm, currency: val.toUpperCase() })}
+                                helper="e.g. BTC, ETH, USDT"
+                            />
+                            <InputField
+                                label="Network"
+                                type="text"
+                                value={walletForm.network}
+                                onChange={(val) => setWalletForm({ ...walletForm, network: val })}
+                                helper="e.g. ERC20, TRC20, Bitcoin"
+                            />
+                            <InputField
+                                label="Wallet Address"
+                                type="text"
+                                value={walletForm.address}
+                                onChange={(val) => setWalletForm({ ...walletForm, address: val })}
+                                helper="The public address where users send funds"
+                            />
+                            <InputField
+                                label="Label"
+                                type="text"
+                                value={walletForm.label}
+                                onChange={(val) => setWalletForm({ ...walletForm, label: val })}
+                                helper="A friendly name for this wallet"
+                            />
+                            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                                <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Status</span>
+                                <button
+                                    onClick={() => setWalletForm({ ...walletForm, isActive: !walletForm.isActive })}
+                                    className={cn(
+                                        "px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                                        walletForm.isActive ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"
+                                    )}
+                                >
+                                    {walletForm.isActive ? 'Active' : 'Inactive'}
+                                </button>
+                            </div>
+                        </div>
+                        <div className="flex gap-4 mt-8">
+                            <button
+                                onClick={() => setShowWalletModal(false)}
+                                className="flex-1 py-4 text-xs font-black text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleSaveWallet}
+                                className="flex-1 py-4 bg-gray-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-blue-600 transition-all"
+                            >
+                                {editingWallet ? 'Save Changes' : 'Create Wallet'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Bottom Info Bar */}
             <div className="premium-card p-6 bg-blue-50/50 border-blue-100 flex items-center justify-between group">

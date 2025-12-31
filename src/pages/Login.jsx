@@ -83,14 +83,14 @@ const Login = () => {
                 {/* Brand HUD */}
                 <div className="flex flex-col items-center mb-10 text-center">
                     <div className="relative group">
-                        <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-1000"></div>
-                        <div className="relative w-20 h-20 bg-[#0f172a] border border-white/10 rounded-2xl flex items-center justify-center shadow-2xl">
-                            <ShieldCheck className="text-blue-500 w-10 h-10" />
+                        <div className="absolute -inset-1 bg-gradient-to-r from-emerald-600 to-emerald-400 rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-1000"></div>
+                        <div className="relative w-24 h-24 bg-[#0f172a] border border-white/10 rounded-2xl flex items-center justify-center shadow-2xl overflow-hidden p-2">
+                            <img src="/Velto-logo.svg" alt="Velto Logo" className="w-full h-full object-contain" />
                         </div>
                     </div>
                     <div className="mt-6 space-y-2">
                         <h1 className="text-4xl font-black text-white tracking-tight uppercase italic">
-                            Security <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Genesis</span>
+                            Velto <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-emerald-200">Investment</span>
                         </h1>
                         <p className="text-xs font-bold text-gray-500 uppercase tracking-[0.4em]">Administrative Nexus Node</p>
                     </div>

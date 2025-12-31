@@ -41,15 +41,34 @@ const WithdrawalManagement = () => {
         }
     };
 
-    const handleApprove = async (id) => {
+    const handleApprove = async (withdrawal) => {
         try {
+            const id = withdrawal._id;
+            let txHash = '';
+
+            // If it's a crypto withdrawal, prompt for TX Hash
+            if (withdrawal.isCrypto || withdrawal.cryptoCurrency) {
+                txHash = prompt('Please enter the blockchain transaction hash (TX Hash) for this withdrawal:');
+                if (txHash === null) return; // User cancelled
+                if (!txHash.trim()) {
+                    toast.error('TX Hash is required for crypto withdrawals');
+                    return;
+                }
+            }
+
             setProcessingId(id);
-            await adminService.approveWithdrawal(id);
+
+            if (withdrawal.isCrypto || withdrawal.cryptoCurrency) {
+                await adminService.approveCryptoWithdrawal(id, txHash);
+            } else {
+                await adminService.approveWithdrawal(id);
+            }
+
             toast.success('Withdrawal approved successfully');
             await fetchWithdrawals();
         } catch (error) {
             console.error('Approval failed:', error);
-            toast.error('Failed to approve withdrawal');
+            toast.error(error.response?.data?.message || 'Failed to approve withdrawal');
         } finally {
             setProcessingId(null);
         }
@@ -158,8 +177,8 @@ const WithdrawalManagement = () => {
             {/* Stats Summary HUD */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[
-                    { label: 'Pending Liquidation', value: `₦${(stats.pendingTotal / 1000).toFixed(1)}K`, color: 'text-amber-500', icon: Clock, bg: 'bg-amber-50' },
-                    { label: 'Cleared Today', value: `₦${(stats.clearedToday / 1000).toFixed(1)}K`, color: 'text-emerald-500', icon: ShieldCheck, bg: 'bg-emerald-50' },
+                    { label: 'Pending Liquidation', value: `$${(stats.pendingTotal / 1000).toFixed(1)}K`, color: 'text-amber-500', icon: Clock, bg: 'bg-amber-50' },
+                    { label: 'Cleared Today', value: `$${(stats.clearedToday / 1000).toFixed(1)}K`, color: 'text-emerald-500', icon: ShieldCheck, bg: 'bg-emerald-50' },
                     { label: 'Network Stability', value: '98.2%', color: 'text-blue-500', icon: Zap, bg: 'bg-blue-50' },
                 ].map((stat, i) => (
                     <div key={i} className="premium-card p-6 flex items-center gap-6 group">
@@ -204,10 +223,10 @@ const WithdrawalManagement = () => {
                                         <td className="px-8 py-6">
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-bold text-gray-900 tracking-tight">
-                                                    ₦{Math.abs(req.amount).toLocaleString()}
+                                                    ${Math.abs(req.amount).toLocaleString()}
                                                 </span>
                                                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">
-                                                    {req.method || 'Bank Transfer'}
+                                                    {req.cryptoCurrency || req.method || 'Crypto'}
                                                 </span>
                                             </div>
                                         </td>
@@ -242,7 +261,7 @@ const WithdrawalManagement = () => {
                                                 {req.status === 'Pending' ? (
                                                     <>
                                                         <button
-                                                            onClick={() => handleApprove(req._id)}
+                                                            onClick={() => handleApprove(req)}
                                                             disabled={processingId === req._id}
                                                             className="flex items-center gap-2 px-5 py-2.5 bg-gray-900 hover:opacity-90 disabled:opacity-50 text-white rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all shadow-sm active:scale-95 disabled:cursor-not-allowed"
                                                         >

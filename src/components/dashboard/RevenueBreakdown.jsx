@@ -10,7 +10,7 @@ const RevenueBreakdown = ({ data, total }) => {
                 <div className="w-48 h-48 rounded-full border-[20px] border-gray-50 flex items-center justify-center relative group">
                     <div className="absolute inset-[-20px] rounded-full border-[20px] border-transparent border-t-yellow-400 border-r-blue-500 border-b-rose-400 rotate-45 transition-transform duration-1000 group-hover:rotate-[225deg]" />
                     <div className="text-center">
-                        <p className="text-3xl font-black text-gray-900 tracking-tighter">₦{total || '84.2K'}</p>
+                        <p className="text-3xl font-black text-gray-900 tracking-tighter">${total || '84.2K'}</p>
                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Total Yield</p>
                     </div>
                 </div>

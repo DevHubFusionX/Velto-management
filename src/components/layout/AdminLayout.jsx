@@ -96,8 +96,8 @@ const AdminLayout = ({ children }) => {
                 <div className="flex flex-col h-full">
                     {/* Sidebar Brand */}
                     <div className="flex items-center gap-3 px-6 h-16 border-b border-white/5 mb-4">
-                        <div className="w-10 h-10 bg-gray-400/20 rounded-full flex items-center justify-center">
-                            <Users className="text-white" size={24} />
+                        <div className="w-10 h-10 flex items-center justify-center overflow-hidden">
+                            <img src="/Velto-logo.svg" alt="Velto Logo" className="w-full h-full object-contain" />
                         </div>
                         <span className={cn(
                             "text-white font-bold text-lg tracking-tight transition-all",
@@ -113,7 +113,9 @@ const AdminLayout = ({ children }) => {
                                 key={item.path}
                                 {...item}
                                 isOpen={isSidebarOpen || isMobileOpen}
-                                isActive={location.pathname === item.path}
+                                isActive={item.path === '/'
+                                    ? location.pathname === '/'
+                                    : location.pathname.startsWith(item.path)}
                             />
                         ))}
                     </nav>
@@ -123,12 +125,12 @@ const AdminLayout = ({ children }) => {
                             to="/settings"
                             className={cn(
                                 "flex items-center gap-4 w-full px-6 py-4 transition-all text-sm font-medium",
-                                location.pathname === '/settings'
+                                location.pathname.startsWith('/settings')
                                     ? "bg-white/5 text-white"
                                     : "text-[#B1B5BA] hover:bg-[#3D444F] hover:text-white"
                             )}
                         >
-                            <Settings size={20} className={cn(location.pathname === '/settings' && "text-blue-400")} />
+                            <Settings size={20} className={cn(location.pathname.startsWith('/settings') && "text-blue-400")} />
                             <span className={cn(!isSidebarOpen && "lg:hidden")}>Settings</span>
                         </Link>
                     </div>
