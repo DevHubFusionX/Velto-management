@@ -71,6 +71,24 @@ const InputField = ({ label, value, onChange, type = "number", suffix, prefix, h
     </div>
 );
 
+const CRYPTO_OPTIONS = [
+    { value: 'BTC', label: 'Bitcoin (BTC)' },
+    { value: 'ETH', label: 'Ethereum (ETH)' },
+    { value: 'BNB', label: 'BNB (BNB)' },
+    { value: 'LTC', label: 'Litecoin (LTC)' },
+    { value: 'USDT_TRC20', label: 'Tether (USDT TRC20)' },
+    { value: 'USDT_ERC20', label: 'Tether (USDT ERC20)' }
+];
+
+const NETWORK_OPTIONS = [
+    { value: 'Bitcoin', label: 'Bitcoin Network' },
+    { value: 'Ethereum', label: 'Ethereum (ERC20)' },
+    { value: 'BEP20', label: 'BNB Chain (BEP20)' },
+    { value: 'Litecoin', label: 'Litecoin Network' },
+    { value: 'TRC20', label: 'Tron (TRC20)' },
+    { value: 'ERC20', label: 'Ethereum (ERC20)' }
+];
+
 const PlatformSettings = () => {
     const toast = useToast();
     const { health, handleToggleSystemFreeze, refreshData } = usePlatform();
@@ -86,7 +104,7 @@ const PlatformSettings = () => {
     const [walletForm, setWalletForm] = useState({
         currency: 'BTC',
         address: '',
-        network: '',
+        network: 'Bitcoin',
         label: '',
         isActive: true
     });
@@ -392,14 +410,14 @@ const PlatformSettings = () => {
                             <div className="grid grid-cols-2 gap-4">
                                 <InputField
                                     label="Min Deposit"
-                                    value={settings?.limits?.deposit?.min?.usd}
-                                    onChange={(val) => setSettings(s => ({ ...s, limits: { ...s.limits, deposit: { ...s.limits.deposit, min: { ...s.limits.deposit.min, usd: parseFloat(val) } } } }))}
+                                    value={settings?.crypto?.depositMinUsd}
+                                    onChange={(val) => setSettings(s => ({ ...s, crypto: { ...s.crypto, depositMinUsd: parseFloat(val) } }))}
                                     prefix="$"
                                 />
                                 <InputField
                                     label="Max Deposit"
-                                    value={settings?.limits?.deposit?.max?.usd}
-                                    onChange={(val) => setSettings(s => ({ ...s, limits: { ...s.limits, deposit: { ...s.limits.deposit, max: { ...s.limits.deposit.max, usd: parseFloat(val) } } } }))}
+                                    value={settings?.crypto?.depositMaxUsd}
+                                    onChange={(val) => setSettings(s => ({ ...s, crypto: { ...s.crypto, depositMaxUsd: parseFloat(val) } }))}
                                     prefix="$"
                                 />
                             </div>
@@ -413,14 +431,14 @@ const PlatformSettings = () => {
                             <div className="grid grid-cols-2 gap-4">
                                 <InputField
                                     label="Min Withdrawal"
-                                    value={settings?.limits?.withdrawal?.min?.usd}
-                                    onChange={(val) => setSettings(s => ({ ...s, limits: { ...s.limits, withdrawal: { ...s.limits.withdrawal, min: { ...s.limits.withdrawal.min, usd: parseFloat(val) } } } }))}
+                                    value={settings?.crypto?.withdrawalMinUsd}
+                                    onChange={(val) => setSettings(s => ({ ...s, crypto: { ...s.crypto, withdrawalMinUsd: parseFloat(val) } }))}
                                     prefix="$"
                                 />
                                 <InputField
                                     label="Max Withdrawal"
-                                    value={settings?.limits?.withdrawal?.max?.usd}
-                                    onChange={(val) => setSettings(s => ({ ...s, limits: { ...s.limits, withdrawal: { ...s.limits.withdrawal, max: { ...s.limits.withdrawal.max, usd: parseFloat(val) } } } }))}
+                                    value={settings?.crypto?.withdrawalMaxUsd}
+                                    onChange={(val) => setSettings(s => ({ ...s, crypto: { ...s.crypto, withdrawalMaxUsd: parseFloat(val) } }))}
                                     prefix="$"
                                 />
                             </div>
@@ -440,7 +458,7 @@ const PlatformSettings = () => {
                             <button
                                 onClick={() => {
                                     setEditingWallet(null);
-                                    setWalletForm({ currency: 'BTC', address: '', network: '', label: '', isActive: true });
+                                    setWalletForm({ currency: 'BTC', address: '', network: 'Bitcoin', label: '', isActive: true });
                                     setShowWalletModal(true);
                                 }}
                                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
@@ -519,20 +537,32 @@ const PlatformSettings = () => {
                     <div className="relative bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl animate-in zoom-in-95 duration-300">
                         <h3 className="text-xl font-bold text-gray-900 mb-6">{editingWallet ? 'Edit Wallet' : 'Add New Wallet'}</h3>
                         <div className="space-y-4">
-                            <InputField
-                                label="Currency Symbol"
-                                type="text"
-                                value={walletForm.currency}
-                                onChange={(val) => setWalletForm({ ...walletForm, currency: val.toUpperCase() })}
-                                helper="e.g. BTC, ETH, USDT"
-                            />
-                            <InputField
-                                label="Network"
-                                type="text"
-                                value={walletForm.network}
-                                onChange={(val) => setWalletForm({ ...walletForm, network: val })}
-                                helper="e.g. ERC20, TRC20, Bitcoin"
-                            />
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Asset</label>
+                                <select
+                                    value={walletForm.currency}
+                                    onChange={(e) => setWalletForm({ ...walletForm, currency: e.target.value })}
+                                    className="w-full bg-white border border-gray-100 rounded-xl py-4 px-6 text-sm font-bold text-gray-800 outline-none transition-all duration-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 hover:border-blue-200 appearance-none"
+                                >
+                                    {CRYPTO_OPTIONS.map(opt => (
+                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Network</label>
+                                <select
+                                    value={walletForm.network}
+                                    onChange={(e) => setWalletForm({ ...walletForm, network: e.target.value })}
+                                    className="w-full bg-white border border-gray-100 rounded-xl py-4 px-6 text-sm font-bold text-gray-800 outline-none transition-all duration-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 hover:border-blue-200 appearance-none"
+                                >
+                                    {NETWORK_OPTIONS.map(opt => (
+                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+
                             <InputField
                                 label="Wallet Address"
                                 type="text"
@@ -577,6 +607,7 @@ const PlatformSettings = () => {
                     </div>
                 </div>
             )}
+
 
             {/* Bottom Info Bar */}
             <div className="premium-card p-6 bg-blue-50/50 border-blue-100 flex items-center justify-between group">
