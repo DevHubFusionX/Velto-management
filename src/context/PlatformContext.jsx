@@ -27,9 +27,9 @@ export const PlatformProvider = ({ children }) => {
             setHealth(healthData || {});
             setPendingKYC(Array.isArray(kycData) ? kycData : []);
 
-            // Filter only pending withdrawals for the dashboard Capital Clearance section
-            const withdrawals = Array.isArray(withdrawalData) ? withdrawalData : [];
-            const pendingOnly = withdrawals.filter(w => w.status === 'Pending');
+            // Handle both paginated {data:[]} and plain array responses
+            const rawWithdrawals = Array.isArray(withdrawalData) ? withdrawalData : (withdrawalData?.data || []);
+            const pendingOnly = rawWithdrawals.filter(w => w.status === 'Pending');
             setPendingWithdrawals(pendingOnly);
         } catch (error) {
             console.error('Failed to fetch platform data:', error);

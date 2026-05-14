@@ -4,11 +4,8 @@ import {
     XCircle,
     Clock,
     DollarSign,
-    CreditCard,
-    Landmark,
     Loader2,
     RefreshCw,
-    Filter,
     Zap
 } from 'lucide-react';
 import { cn } from '../utils';
@@ -23,8 +20,7 @@ const DepositManagement = () => {
     // Verification Modal State
     const [verificationModal, setVerificationModal] = useState({
         isOpen: false,
-        deposit: null,
-        verifiedAmount: ''
+        deposit: null
     });
 
     useEffect(() => {
@@ -35,7 +31,7 @@ const DepositManagement = () => {
         try {
             setLoading(true);
             const data = await adminService.getDeposits();
-            setDeposits(Array.isArray(data) ? data : []);
+            setDeposits(Array.isArray(data) ? data : (data?.data || []));
         } catch (error) {
             console.error('Failed to fetch deposits:', error);
             toast.error('Failed to load deposits');
@@ -45,41 +41,30 @@ const DepositManagement = () => {
     };
 
     const openVerificationModal = (deposit) => {
-        setVerificationModal({
-            isOpen: true,
-            deposit,
-            verifiedAmount: deposit.amount // Default to requested amount
-        });
+        setVerificationModal({ isOpen: true, deposit });
     };
 
     const closeVerificationModal = () => {
-        setVerificationModal({ isOpen: false, deposit: null, verifiedAmount: '' });
+        setVerificationModal({ isOpen: false, deposit: null });
     };
 
     const handleVerifyApprove = async () => {
-        const { deposit, verifiedAmount } = verificationModal;
+        const { deposit } = verificationModal;
         if (!deposit) return;
 
         try {
             setProcessingId(deposit._id);
-            // Call API with verified amount (Backend expects { verifiedAmount })
-            // We need to update adminService.approveDeposit to support args or use a new method
-            // For now, assuming we modified the service or pass a second arg that the service handles
-            // Actually, let's assume we need to update the service or pass a body.
-            // But adminService.approveDeposit(id) likely doesn't take body. 
-            // I'll update the service call here to pass the amount if the service supports it, 
-            // OR I'll assume I update the service in the next step. 
-            // Wait, looking at admin.service.js, approveDeposit takes (depositId). 
-            // I need to update admin.service.js to take a second argument (data).
-
-            await adminService.approveDeposit(deposit._id, { verifiedAmount });
-
-            toast.success(`Deposit verified and approved for $${verifiedAmount}`);
+            const result = await adminService.approveCryptoDeposit(deposit._id, {});
+            if (result.verified) {
+                toast.success(`✅ On-chain verified! $${result.onChainAmount} USDT credited.`);
+            } else {
+                toast.success('Deposit approved');
+            }
             closeVerificationModal();
             await fetchDeposits();
         } catch (error) {
-            console.error('Approval failed:', error);
-            toast.error('Failed to approve deposit');
+            const msg = error.response?.data?.message || 'Verification failed';
+            toast.error(msg);
         } finally {
             setProcessingId(null);
         }
@@ -227,35 +212,37 @@ const DepositManagement = () => {
                                                 <span className="text-sm font-bold text-gray-900 tracking-tight">
                                                     ${deposit.amount.toLocaleString()}
                                                 </span>
-                                                <span className="text-[10px] text-gray-400 font-mono uppercase tracking-widest mt-1">
-                                                    {deposit.cryptoCurrency || deposit.method || 'Crypto'}
+                                                <span className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest mt-1">
+                                                    USDT — {deposit.network || (deposit.cryptoCurrency?.includes('TRC20') ? 'TRC20' : 'ERC20')}
                                                 </span>
                                                 {deposit.txHash && (
-                                                    <span className="mt-1 text-[9px] text-blue-500 font-mono truncate max-w-[120px]" title={deposit.txHash}>
+                                                    <span className="mt-1 text-[9px] text-blue-500 font-mono truncate max-w-[160px]" title={deposit.txHash}>
                                                         TX: {deposit.txHash}
                                                     </span>
                                                 )}
                                             </div>
                                         </td>
                                         <td className="px-8 py-6">
-                                            {deposit.proofUrl ? (
-                                                <a href={deposit.proofUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline text-xs">View Proof</a>
+                                            {deposit.txHash ? (
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">TX Hash</span>
+                                                    <span className="text-xs font-mono text-blue-600 truncate max-w-[160px]" title={deposit.txHash}>{deposit.txHash}</span>
+                                                    <a href={`https://${deposit.network === 'TRC20' ? 'tronscan.org/#/transaction/' : 'etherscan.io/tx/'}${deposit.txHash}`}
+                                                        target="_blank" rel="noopener noreferrer"
+                                                        className="text-[10px] text-blue-400 hover:underline flex items-center gap-1">
+                                                        Verify on-chain ↗
+                                                    </a>
+                                                </div>
                                             ) : (
-                                                <span className="text-xs text-gray-400">No Proof</span>
+                                                <span className="text-xs text-gray-400">No TX Hash</span>
                                             )}
                                         </td>
                                         <td className="px-8 py-6">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
-                                                    {deposit.method === 'card' ? (
-                                                        <CreditCard size={14} className="text-gray-400" />
-                                                    ) : (
-                                                        <Landmark size={14} className="text-gray-400" />
-                                                    )}
+                                                <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
+                                                    <span className="text-emerald-600 font-bold text-xs">₮</span>
                                                 </div>
-                                                <span className="text-xs font-medium text-gray-600 capitalize">
-                                                    {deposit.method || 'Crypto'}
-                                                </span>
+                                                <span className="text-xs font-bold text-emerald-600">USDT</span>
                                             </div>
                                         </td>
                                         <td className="px-8 py-6">
@@ -329,53 +316,38 @@ const DepositManagement = () => {
                         </div>
 
                         <div className="space-y-4">
-                            {/* Proof Display */}
-                            <div className="border rounded-xl p-4 bg-gray-50 flex flex-col items-center">
-                                <span className="text-sm font-medium text-gray-500 mb-2">Proof of Payment</span>
-                                {verificationModal.deposit?.proofUrl ? (
-                                    <img
-                                        src={verificationModal.deposit.proofUrl}
-                                        alt="Proof"
-                                        className="max-h-60 rounded-lg shadow-sm border"
-                                    />
-                                ) : (
-                                    <div className="h-32 w-full flex items-center justify-center text-gray-400 text-sm">
-                                        No proof image provided
-                                    </div>
+                            {/* TX Hash */}
+                            <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
+                                <p className="text-[10px] text-blue-600 font-black uppercase tracking-widest mb-1">Transaction Hash</p>
+                                <p className="text-sm font-mono text-gray-900 break-all">{verificationModal.deposit?.txHash || 'No TX hash'}</p>
+                                {verificationModal.deposit?.txHash && (
+                                    <a
+                                        href={`https://${verificationModal.deposit?.network === 'TRC20' ? 'tronscan.org/#/transaction/' : 'etherscan.io/tx/'}${verificationModal.deposit.txHash}`}
+                                        target="_blank" rel="noopener noreferrer"
+                                        className="text-xs text-blue-500 hover:underline mt-2 inline-flex items-center gap-1"
+                                    >
+                                        View on {verificationModal.deposit?.network === 'TRC20' ? 'Tronscan' : 'Etherscan'} ↗
+                                    </a>
                                 )}
                             </div>
 
-                            {/* TX Hash Display */}
-                            {verificationModal.deposit?.txHash && (
-                                <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 p-2 opacity-10">
-                                        <Zap size={40} className="text-blue-600" />
+                            <div className="p-4 bg-gray-50 rounded-xl space-y-2 text-sm">
+                                {[['User', verificationModal.deposit?.user?.name || verificationModal.deposit?.user?.email],
+                                  ['Amount Claimed', `$${verificationModal.deposit?.amount}`],
+                                  ['Network', verificationModal.deposit?.network],
+                                  ['Submitted', new Date(verificationModal.deposit?.date).toLocaleString()]
+                                ].map(([label, value]) => (
+                                    <div key={label} className="flex justify-between">
+                                        <span className="text-gray-500">{label}</span>
+                                        <span className="font-bold text-gray-800">{value}</span>
                                     </div>
-                                    <p className="text-[10px] text-blue-600 font-black uppercase tracking-widest mb-1">Blockchain TXID</p>
-                                    <p className="text-sm font-mono text-gray-900 break-all leading-relaxed bg-white/50 p-2 rounded border border-blue-200">
-                                        {verificationModal.deposit.txHash}
-                                    </p>
-                                </div>
-                            )}
-
-                            {/* Amount Verification Input */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Verified Amount ($)
-                                </label>
-                                <p className="text-xs text-gray-500 mb-2">
-                                    Original Request: <span className="font-semibold text-gray-900">${verificationModal.deposit?.amount.toLocaleString()}</span>
-                                </p>
-                                <input
-                                    type="number"
-                                    value={verificationModal.verifiedAmount}
-                                    onChange={(e) => setVerificationModal({ ...verificationModal, verifiedAmount: e.target.value })}
-                                    className="block w-full px-4 py-3 border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 text-lg font-semibold"
-                                />
-                                <p className="text-xs text-amber-600 mt-2">
-                                    * Ensure this matches the exact amount received in the crypto wallet.
-                                </p>
+                                ))}
                             </div>
+
+                            <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-xl p-3">
+                                Clicking <strong>Verify &amp; Approve</strong> will automatically check this TX hash on-chain.
+                                The actual on-chain USDT amount will be credited — not the user-submitted amount.
+                            </p>
 
                             <div className="flex gap-3 mt-6">
                                 <button
@@ -389,7 +361,7 @@ const DepositManagement = () => {
                                     disabled={processingId === verificationModal.deposit?._id}
                                     className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow-md shadow-emerald-200 disabled:opacity-50"
                                 >
-                                    {processingId ? <Loader2 className="animate-spin mx-auto" /> : 'Confirm & Approve'}
+                                    {processingId ? <Loader2 className="animate-spin mx-auto" /> : 'Verify & Approve'}
                                 </button>
                             </div>
                         </div>

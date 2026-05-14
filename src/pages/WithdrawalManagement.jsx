@@ -32,7 +32,8 @@ const WithdrawalManagement = () => {
         try {
             setLoading(true);
             const data = await adminService.getWithdrawals();
-            setWithdrawals(Array.isArray(data) ? data : []);
+            // Handle both paginated {data:[]} and plain array
+            setWithdrawals(Array.isArray(data) ? data : (data?.data || []));
         } catch (error) {
             console.error('Failed to fetch withdrawals:', error);
             toast.error('Failed to load withdrawals');
@@ -44,30 +45,17 @@ const WithdrawalManagement = () => {
     const handleApprove = async (withdrawal) => {
         try {
             const id = withdrawal._id;
-            let txHash = '';
-
-            // If it's a crypto withdrawal, prompt for TX Hash
-            if (withdrawal.isCrypto || withdrawal.cryptoCurrency) {
-                txHash = prompt('Please enter the blockchain transaction hash (TX Hash) for this withdrawal:');
-                if (txHash === null) return; // User cancelled
-                if (!txHash.trim()) {
-                    toast.error('TX Hash is required for crypto withdrawals');
-                    return;
-                }
+            const txHash = prompt(`Enter the blockchain TX hash after sending USDT (${withdrawal.network || 'TRC20'}) to:\n${withdrawal.cryptoAddress}`);
+            if (txHash === null) return;
+            if (!txHash.trim()) {
+                toast.error('TX Hash is required');
+                return;
             }
-
             setProcessingId(id);
-
-            if (withdrawal.isCrypto || withdrawal.cryptoCurrency) {
-                await adminService.approveCryptoWithdrawal(id, txHash);
-            } else {
-                await adminService.approveWithdrawal(id);
-            }
-
-            toast.success('Withdrawal approved successfully');
+            await adminService.approveCryptoWithdrawal(id, txHash.trim());
+            toast.success('Withdrawal approved');
             await fetchWithdrawals();
         } catch (error) {
-            console.error('Approval failed:', error);
             toast.error(error.response?.data?.message || 'Failed to approve withdrawal');
         } finally {
             setProcessingId(null);
@@ -231,13 +219,16 @@ const WithdrawalManagement = () => {
                                             </div>
                                         </td>
                                         <td className="px-8 py-6">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
-                                                    <ExternalLink size={14} className="text-gray-400" />
-                                                </div>
-                                                <span className="text-xs font-medium text-gray-600 font-mono">
-                                                    {req.description?.match(/to (.+?) -/)?.[1] || 'Bank Account'}
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-xs font-mono text-gray-700 break-all max-w-[200px]" title={req.cryptoAddress}>
+                                                    {req.cryptoAddress ? `${req.cryptoAddress.slice(0, 12)}...${req.cryptoAddress.slice(-6)}` : '—'}
                                                 </span>
+                                                <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">
+                                                    USDT — {req.network || (req.cryptoCurrency?.includes('TRC20') ? 'TRC20' : 'ERC20')}
+                                                </span>
+                                                {req.txHash && (
+                                                    <span className="text-[9px] text-blue-500 font-mono">TX: {req.txHash.slice(0, 16)}...</span>
+                                                )}
                                             </div>
                                         </td>
                                         <td className="px-8 py-6">

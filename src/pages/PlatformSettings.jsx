@@ -72,22 +72,19 @@ const InputField = ({ label, value, onChange, type = "number", suffix, prefix, h
 );
 
 const CRYPTO_OPTIONS = [
-    { value: 'BTC', label: 'Bitcoin (BTC)' },
-    { value: 'ETH', label: 'Ethereum (ETH)' },
-    { value: 'BNB', label: 'BNB (BNB)' },
-    { value: 'LTC', label: 'Litecoin (LTC)' },
-    { value: 'USDT_TRC20', label: 'Tether (USDT TRC20)' },
-    { value: 'USDT_ERC20', label: 'Tether (USDT ERC20)' }
+    { value: 'USDT_TRC20', label: 'USDT — TRC20 (Tron)', network: 'TRC20' },
+    { value: 'USDT_ERC20', label: 'USDT — ERC20 (Ethereum)', network: 'ERC20' }
 ];
 
 const NETWORK_OPTIONS = [
-    { value: 'Bitcoin', label: 'Bitcoin Network' },
-    { value: 'Ethereum', label: 'Ethereum (ERC20)' },
-    { value: 'BEP20', label: 'BNB Chain (BEP20)' },
-    { value: 'Litecoin', label: 'Litecoin Network' },
-    { value: 'TRC20', label: 'Tron (TRC20)' },
-    { value: 'ERC20', label: 'Ethereum (ERC20)' }
+    { value: 'TRC20', label: 'TRC20 — Tron Network' },
+    { value: 'ERC20', label: 'ERC20 — Ethereum Network' }
 ];
+
+const CURRENCY_LABELS = {
+    USDT_TRC20: 'USDT TRC20',
+    USDT_ERC20: 'USDT ERC20'
+};
 
 const PlatformSettings = () => {
     const toast = useToast();
@@ -102,9 +99,9 @@ const PlatformSettings = () => {
     const [showWalletModal, setShowWalletModal] = useState(false);
     const [editingWallet, setEditingWallet] = useState(null);
     const [walletForm, setWalletForm] = useState({
-        currency: 'BTC',
+        currency: 'USDT_TRC20',
         address: '',
-        network: 'Bitcoin',
+        network: 'TRC20',
         label: '',
         isActive: true
     });
@@ -130,9 +127,9 @@ const PlatformSettings = () => {
         try {
             setSaving(true);
             await adminService.updateSettings(settings);
-            toast.success('Settings updated successfully');
+            toast.success('Settings saved successfully');
         } catch (error) {
-            toast.error('Failed to update settings');
+            toast.error(error.response?.data?.message || 'Failed to save settings');
         } finally {
             setSaving(false);
         }
@@ -152,29 +149,43 @@ const PlatformSettings = () => {
     };
 
     const handleSaveWallet = async () => {
+        if (!walletForm.address.trim()) {
+            toast.error('Wallet address is required');
+            return;
+        }
         try {
             if (editingWallet) {
-                await adminService.updateCryptoWallet(editingWallet._id, walletForm);
+                await adminService.updateCryptoWallet(editingWallet._id, {
+                    address: walletForm.address,
+                    label: walletForm.label,
+                    isActive: walletForm.isActive
+                });
                 toast.success('Wallet updated');
             } else {
-                await adminService.createCryptoWallet(walletForm);
+                await adminService.createCryptoWallet({
+                    currency: walletForm.currency,
+                    address: walletForm.address,
+                    network: walletForm.network,
+                    label: walletForm.label || `USDT ${walletForm.network} Wallet`,
+                    isActive: walletForm.isActive
+                });
                 toast.success('Wallet created');
             }
             setShowWalletModal(false);
             fetchWallets();
         } catch (error) {
-            toast.error('Failed to save wallet');
+            toast.error(error.response?.data?.message || 'Failed to save wallet');
         }
     };
 
     const handleDeleteWallet = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this wallet?')) return;
+        if (!window.confirm('Delete this wallet? Users will no longer see this deposit address.')) return;
         try {
             await adminService.deleteCryptoWallet(id);
             toast.success('Wallet deleted');
             fetchWallets();
         } catch (error) {
-            toast.error('Failed to delete wallet');
+            toast.error(error.response?.data?.message || 'Failed to delete wallet');
         }
     };
 
@@ -458,7 +469,7 @@ const PlatformSettings = () => {
                             <button
                                 onClick={() => {
                                     setEditingWallet(null);
-                                    setWalletForm({ currency: 'BTC', address: '', network: 'Bitcoin', label: '', isActive: true });
+                                    setWalletForm({ currency: 'USDT_TRC20', address: '', network: 'TRC20', label: '', isActive: true });
                                     setShowWalletModal(true);
                                 }}
                                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
@@ -478,12 +489,12 @@ const PlatformSettings = () => {
                                     <div key={wallet._id} className="p-5 rounded-2xl bg-gray-50 border border-gray-100 hover:border-blue-200 transition-all group/wallet relative overflow-hidden">
                                         <div className="flex items-start justify-between relative z-10">
                                             <div className="flex gap-4">
-                                                <div className="w-12 h-12 rounded-xl bg-white border border-gray-100 flex items-center justify-center shadow-sm">
-                                                    <span className="text-sm font-black text-blue-600">{wallet.currency}</span>
+                                                <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center shadow-sm">
+                                                    <span className="text-lg font-black text-emerald-600">₮</span>
                                                 </div>
                                                 <div>
                                                     <div className="flex items-center gap-2">
-                                                        <h4 className="text-sm font-bold text-gray-800">{wallet.label || wallet.currency}</h4>
+                                                        <h4 className="text-sm font-bold text-gray-800">{wallet.label || CURRENCY_LABELS[wallet.currency] || wallet.currency}</h4>
                                                         {!wallet.isActive && <span className="text-[8px] font-black text-red-500 uppercase px-1.5 py-0.5 bg-red-50 rounded">Inactive</span>}
                                                     </div>
                                                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">{wallet.network}</p>
@@ -541,7 +552,10 @@ const PlatformSettings = () => {
                                 <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Asset</label>
                                 <select
                                     value={walletForm.currency}
-                                    onChange={(e) => setWalletForm({ ...walletForm, currency: e.target.value })}
+                                    onChange={(e) => {
+                                        const opt = CRYPTO_OPTIONS.find(o => o.value === e.target.value);
+                                        setWalletForm({ ...walletForm, currency: e.target.value, network: opt?.network || walletForm.network });
+                                    }}
                                     className="w-full bg-white border border-gray-100 rounded-xl py-4 px-6 text-sm font-bold text-gray-800 outline-none transition-all duration-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 hover:border-blue-200 appearance-none"
                                 >
                                     {CRYPTO_OPTIONS.map(opt => (
@@ -556,6 +570,7 @@ const PlatformSettings = () => {
                                     value={walletForm.network}
                                     onChange={(e) => setWalletForm({ ...walletForm, network: e.target.value })}
                                     className="w-full bg-white border border-gray-100 rounded-xl py-4 px-6 text-sm font-bold text-gray-800 outline-none transition-all duration-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 hover:border-blue-200 appearance-none"
+                                    disabled
                                 >
                                     {NETWORK_OPTIONS.map(opt => (
                                         <option key={opt.value} value={opt.value}>{opt.label}</option>

@@ -5,13 +5,22 @@ import { usePlatform } from '../../context/PlatformContext';
 const DashboardActions = () => {
     const { handleToggleSystemFreeze, handleCreateStrategy, refreshData } = usePlatform();
     const [showModal, setShowModal] = useState(false);
-    const [newPlan, setNewPlan] = useState({ name: '', returns: '', min: '', type: 'Fixed Income', color: '#3b82f6' });
+    const [newPlan, setNewPlan] = useState({
+        name: '', minAmount: '', maxAmount: '', dailyPayout: '', durationDays: '',
+        isPercentage: true, type: 'General Growth', color: '#3b82f6', description: ''
+    });
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        await handleCreateStrategy(newPlan);
+        await handleCreateStrategy({
+            ...newPlan,
+            minAmount: Number(newPlan.minAmount),
+            maxAmount: Number(newPlan.maxAmount),
+            dailyPayout: Number(newPlan.dailyPayout),
+            durationDays: Number(newPlan.durationDays)
+        });
         setShowModal(false);
-        setNewPlan({ name: '', returns: '', min: '', type: 'Fixed Income', color: '#3b82f6' });
+        setNewPlan({ name: '', minAmount: '', maxAmount: '', dailyPayout: '', durationDays: '', isPercentage: true, type: 'General Growth', color: '#3b82f6', description: '' });
     };
 
     return (
@@ -67,25 +76,51 @@ const DashboardActions = () => {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Target ROI</label>
-                                    <input
-                                        required
-                                        type="text"
-                                        placeholder="e.g., 25% p.a"
-                                        className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 transition-all outline-none"
-                                        value={newPlan.returns}
-                                        onChange={e => setNewPlan({ ...newPlan, returns: e.target.value })}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Min. Magnitude</label>
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Min Amount ($)</label>
                                     <input
                                         required
                                         type="number"
-                                        placeholder="Min Entry"
+                                        placeholder="e.g., 500"
                                         className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 transition-all outline-none"
-                                        value={newPlan.min}
-                                        onChange={e => setNewPlan({ ...newPlan, min: e.target.value })}
+                                        value={newPlan.minAmount}
+                                        onChange={e => setNewPlan({ ...newPlan, minAmount: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Max Amount ($)</label>
+                                    <input
+                                        required
+                                        type="number"
+                                        placeholder="e.g., 10000"
+                                        className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 transition-all outline-none"
+                                        value={newPlan.maxAmount}
+                                        onChange={e => setNewPlan({ ...newPlan, maxAmount: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Daily Payout (%)</label>
+                                    <input
+                                        required
+                                        type="number"
+                                        step="0.01"
+                                        placeholder="e.g., 2"
+                                        className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 transition-all outline-none"
+                                        value={newPlan.dailyPayout}
+                                        onChange={e => setNewPlan({ ...newPlan, dailyPayout: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Duration (Days)</label>
+                                    <input
+                                        required
+                                        type="number"
+                                        placeholder="e.g., 30"
+                                        className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 transition-all outline-none"
+                                        value={newPlan.durationDays}
+                                        onChange={e => setNewPlan({ ...newPlan, durationDays: e.target.value })}
                                     />
                                 </div>
                             </div>
